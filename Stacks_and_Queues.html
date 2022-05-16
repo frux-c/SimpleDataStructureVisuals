@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+body{
+    margin: auto;
+    width: 100%;
+    padding: 100px;
+}
+.grid-container {
+  display: grid;
+  grid-template-columns: auto auto auto auto auto auto auto auto auto auto; 
+  width: 500px;
+}
+.grid-item{
+    border:1px solid black;
+    width: 50px !important;
+    height: 50px !important;
+    text-align: center;
+    vertical-align: middle;
+}
+.visited{
+    background-color: rgb(92, 122, 255);
+}
+.wall{
+    background-color: rgb(85, 44, 6);
+}
+.win{
+    background-color: greenyellow;
+}
+.row {
+    width: 100%;
+    margin: 0 auto;
+}
+.block {
+    display: inline-block;
+}
+.current{
+    background-color: crimson;
+}
+span + span{
+    margin-left:150px;
+}
+</style>
+<body>
+    <div class="row">
+        <div class="block">
+            <div><h1><span id="Ssteps"></span><span id="Spoints"></span></h1></div>
+            <div id="Sgrid-div" class="grid-container"></div>
+        </div>
+        <div class="block" style="width: 100px !important;"></div>
+        <div class="block">
+            <div><h1><span id="Qsteps"></span> <span id="Qpoints"></span></h1></div>
+            <div id="Qgrid-div" class="grid-container"></div>
+        </div>
+    </div>
+</body>
+<script>
+    class MazeStatus{
+        constructor(x,y){
+            this.x = x;
+            this.y = y;
+        }
+        getX(){
+            return this.x;
+        }
+        getY(){
+            return this.y;
+        }
+    }
+    class Queue {
+        constructor() {
+            this.elements = {};
+            this.head = 0;
+            this.tail = 0;
+        }
+        enqueue(element) {
+            this.elements[this.tail] = element;
+            this.tail++;
+        }
+        dequeue() {
+            const item = this.elements[this.head];
+            delete this.elements[this.head];
+            this.head++;
+            return item;
+        }
+        peek() {
+            return this.elements[this.head];
+        }
+        length() {
+            return this.tail - this.head;
+        }
+        isEmpty() {
+            return this.length === 0;
+        }
+    }
+</script>
+<script>
+    Sgridhouse = document.getElementById('Sgrid-div');
+    Qgridhouse = document.getElementById('Qgrid-div');
+    grids = new Array();
+    grids2 = new Array();
+    var count = 1;
+    for(var i = 1; i <= 10; i++){
+        innergrids = new Array();
+        innergrids2 = new Array();
+        for(var j = 1; j <= 10; j++){
+            grid = document.createElement('div');
+            grid2 = document.createElement('div');
+            grid.classList.add('grid-item');
+            grid2.classList.add('grid-item')
+            rand = Math.floor(Math.random() * 50) + 1;
+            if(rand % 3 == 0){
+                grid.innerHTML = 's';
+                grid2.innerHTML = 's';
+            }
+            else if(rand % 5 == 0){
+                grid.innerHTML = 'p';
+                grid2.innerHTML = 'p';
+            }
+            else if(rand % 7 == 0){
+                grid.innerHTML = 'P';
+                grid2.innerHTML = 'P';
+            }
+            else{
+                grid.innerHTML = count;
+                grid2.innerHTML = count;
+            }
+            count++;
+            Sgridhouse.appendChild(grid);
+            Qgridhouse.appendChild(grid2);
+            innergrids.push(grid);
+            innergrids2.push(grid2);
+        }
+        grids.push(innergrids);
+        grids2.push(innergrids2);
+    }
+    randx = Math.floor(Math.random() * 2) + 1;
+    randy = Math.floor(Math.random() * 2) + 1;
+    grids[7 + randx][randy + 7].innerHTML = 'E';
+    grids2[7 + randx][randy + 7].innerHTML = 'E';
+    //walls
+    walls = [
+    grids[0][1],
+    grids[0][4],
+    grids[0][6],
+    grids[1][1],
+    grids[1][3],
+    grids[1][4],
+    grids[1][6],
+    grids[1][7],
+    grids[1][9],
+    grids[3][0],
+    grids[3][1],
+    grids[3][2],
+    grids[3][2],
+    grids[3][3],
+    grids[3][7],
+    grids[3][8],
+    grids[3][9],
+    grids[5][2],
+    grids[5][4],
+    grids[6][0],
+    grids[6][1],
+    grids[6][2],
+    grids[6][4],
+    grids[6][5],
+    grids[6][6],
+    grids[6][7],
+    grids[6][8],
+    grids[6][9],
+    grids[7][4],
+    grids[8][1],
+    grids[8][2],
+    grids[8][4],
+    grids[8][6],
+    grids[9][1],
+    grids[9][6],
+    //
+    grids2[0][1],
+    grids2[0][4],
+    grids2[0][6],
+    grids2[1][1],
+    grids2[1][3],
+    grids2[1][4],
+    grids2[1][6],
+    grids2[1][7],
+    grids2[1][9],
+    grids2[3][0],
+    grids2[3][1],
+    grids2[3][2],
+    grids2[3][2],
+    grids2[3][3],
+    grids2[3][7],
+    grids2[3][8],
+    grids2[3][9],
+    grids2[5][2],
+    grids2[5][4],
+    grids2[6][0],
+    grids2[6][1],
+    grids2[6][2],
+    grids2[6][4],
+    grids2[6][5],
+    grids2[6][6],
+    grids2[6][7],
+    grids2[6][8],
+    grids2[6][9],
+    grids2[7][4],
+    grids2[8][1],
+    grids2[8][2],
+    grids2[8][4],
+    grids2[8][6],
+    grids2[9][1],
+    grids2[9][6],
+    ]
+    // walls = []
+    for(var i = 0; i < walls.length; i++){
+        walls[i].innerHTML = "";
+        walls[i].classList.add("wall");
+    }
+    pointsb = document.getElementById('Spoints');
+    stepsb = document.getElementById('Ssteps');
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve,ms));
+    const Straversal =  async () => {
+        S = [];
+        Spoints = 0;
+        Ssteps = 0;
+        S.push(new MazeStatus(0,0));
+        while(S.length != 0){
+            //current space
+            loc = S.pop();
+            x = loc.getX();
+            y = loc.getY();
+            //num of steps
+            Ssteps++;
+            //data points
+            data = grids[x][y].innerHTML
+            if(data == 'P') Spoints += 15;
+			else if(data == 'p') Spoints += 10;
+			else if(data == 's') Spoints += 5;
+			else if(data == 'E') {
+				Spoints += 50;
+                grids[x][y].classList.remove('current');
+                grids[x][y].classList.add("win");
+				break;
+			}
+            //mark visited
+            grids[x][y].classList.add("current");
+            grids[x][y].innerHTML = "X"; 
+            await wait(100);
+            grids[x][y].classList.remove('current');
+            grids[x][y].classList.add('visited');
+            stepsb.innerHTML = "SSteps : " + Ssteps;
+            pointsb.innerHTML = "SPoints : " + Spoints;
+            //next move
+            
+            //up
+            if(x - 1 >= 0){
+                if(!grids[x - 1][y].classList.contains("visited") && 
+                    !grids[x - 1][y].classList.contains("wall") ){
+                    S.push(new MazeStatus(x-1,y));
+                }
+            }
+            //down
+            if(x + 1 < grids.length)
+                if(!grids[x + 1][y].classList.contains("visited") &&
+                    !grids[x + 1][y].classList.contains("wall")){
+                    S.push(new MazeStatus(x+1,y));{
+                    }
+            }
+            //left
+            if(y - 1 >= 0){
+                if(!grids[x][y-1].classList.contains("visited") && 
+                    !grids[x][y-1].classList.contains("wall")){
+                    S.push(new MazeStatus(x,y-1));
+                }
+            }
+            //right
+            if(y + 1 < grids[x].length){
+                if(!grids[x][y+1].classList.contains("visited") && 
+                    !grids[x][y+1].classList.contains("wall")){
+                    S.push(new MazeStatus(x,y+1));
+                }
+            }
+            await wait(100);
+        }
+    }
+    const Qtraversal = async() => {
+        Qpoints = 0;
+        Qsteps = 0;
+        stepsc = document.getElementById("Qsteps");
+        pointsc = document.getElementById("Qpoints");
+        Q = new Queue();
+        Q.enqueue(new MazeStatus(0,0));
+        while(!Q.isEmpty()){
+            loc = Q.dequeue();
+            x = loc.getX();
+            y = loc.getY();
+            while(grids2[x][y].classList.contains("visited")){
+                loc = Q.dequeue();
+                x = loc.getX();
+                y = loc.getY();
+            }
+            //num of steps
+            Qsteps++;
+            //data points
+            data = grids2[x][y].innerHTML
+            if(data == 'P') Qpoints += 15;
+			else if(data == 'p') Qpoints += 10;
+			else if(data == 's') Qpoints += 5;
+			else if(data == 'E') {
+				Qpoints += 50;
+                grids2[x][y].classList.remove("current");
+                grids2[x][y].classList.add("win");
+				break;
+			}
+            //mark visited
+            grids2[x][y].classList.add("current");
+            grids2[x][y].innerHTML = "X"; 
+            await wait(100);
+            grids2[x][y].classList.remove("current");
+            grids2[x][y].classList.add("visited");
+            stepsc.innerHTML = "QSteps : " + Qsteps;
+            pointsc.innerHTML = "QPoints : " + Qpoints;
+
+            //up
+            if(x - 1 >= 0){
+                if(!grids2[x - 1][y].classList.contains("visited") && 
+                    !grids2[x - 1][y].classList.contains("wall") ){
+                    Q.enqueue(new MazeStatus(x-1,y));
+                }
+            }
+            //down
+            if(x + 1 < grids2.length)
+                if(!grids2[x + 1][y].classList.contains("visited") &&
+                    !grids2[x + 1][y].classList.contains("wall")){
+                    Q.enqueue(new MazeStatus(x+1,y));{
+                    }
+            }
+            //left
+            if(y - 1 >= 0){
+                if(!grids2[x][y-1].classList.contains("visited") && 
+                    !grids2[x][y-1].classList.contains("wall")){
+                    Q.enqueue(new MazeStatus(x,y-1));
+                }
+            }
+            //right
+            if(y + 1 < grids2[x].length){
+                if(!grids2[x][y+1].classList.contains("visited") && 
+                    !grids2[x][y+1].classList.contains("wall")){
+                        Q.enqueue(new MazeStatus(x,y+1));
+                }
+            }
+            await wait(100);
+        }
+    }
+    Straversal();
+    Qtraversal();
+</script>
+<script>
+    // class MazeStatus{
+    //     status = (null,null);
+        
+
+    // }
+    
+    // grids = document.getElementsByClassName('grid-item');
+    // const loop =  async () => {
+    //     for(var i = 0; i < grids.length;i++){
+    //     grids[i].classList.add("visited");
+        
+    //     }
+    // }
+    // loop()
+</script>
+</html>
+
